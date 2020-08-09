@@ -8,8 +8,7 @@ import (
 )
 
 type Client struct {
-	csrfToken  string
-	userCookie string
+	sessionToken string
 }
 
 func (c *Client) getPage(page int) OrdersResponse {
@@ -21,13 +20,14 @@ func (c *Client) getPage(page int) OrdersResponse {
 	req.Header.Set("Authority", "www.instacart.com")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("X-Client-Identifier", "web")
-	req.Header.Set("X-Csrf-Token", c.csrfToken)
 	req.Header.Set("User-Agent", "Instacart Orders To CSV Client")
 	req.Header.Set("Dnt", "1")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Referer", "https://www.instacart.com/store/account/orders")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
-	req.Header.Set("Cookie", c.userCookie)
+
+	cookie := "_instacart_session=" + c.sessionToken + ";"
+	req.Header.Set("Cookie", cookie)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

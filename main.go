@@ -80,12 +80,14 @@ func fetchOrders(client Client) []Order {
 }
 
 func main() {
-	authCookie := os.Getenv("AUTH_COOKIE")
-	csrf := os.Getenv("AUTH_CSRF")
+	sessionToken := os.Getenv("INSTACART_SESSION_TOKEN")
+
+	if sessionToken == "" {
+		log.Fatal("Session token missing. Please provide the INSTACART_SESSION_TOKEN environment variable")
+	}
 
 	client := Client{
-		userCookie: authCookie,
-		csrfToken:  csrf,
+		sessionToken: sessionToken,
 	}
 
 	log.Print("Fetching orders...")
@@ -125,7 +127,7 @@ func main() {
 	log.Print("Writing orders to a CSV")
 
 	now := time.Now()
-	file, err := os.Create("instacart_orders_" + now.Format("01-02-2006_03:04:05") + ".csv")
+	file, err := os.Create("data/instacart_orders_" + now.Format("01-02-2006_03-04-05") + ".csv")
 	if err != nil {
 		log.Fatal("Unable to create file", err)
 	}
