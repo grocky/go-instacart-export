@@ -1,35 +1,38 @@
-package main
+package instacart
 
 import "time"
 
+// Item represents a purchased item in teh delivery.
 type Item struct {
-	Id        string
-	ProductId string
+	ID        string
+	ProductID string
 	Quantity  int
 	Name      string
 }
+
+// Delivery is a purhcase at a particular retailer.
 type Delivery struct {
 	Retailer    string
 	DeliveredAt time.Time
-	Items       []Item
+	Items       []*Item
 }
+
+// Order is the complete transaction.
 type Order struct {
-	Id         string
+	ID         string
 	Status     string
 	Total      string
 	CreatedAt  time.Time
-	Deliveries []Delivery
+	Deliveries []*Delivery
 }
 
-type SortOrder []Order
+type sortOrders []*Order
 
-func (o SortOrder) Len() int      { return len(o) }
-func (o SortOrder) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
+func (o sortOrders) Len() int      { return len(o) }
+func (o sortOrders) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
 
-type SortOrderByDate struct {
-	SortOrder
-}
+type sortOrderByDate struct{ sortOrders }
 
-func (o SortOrderByDate) Less(i, j int) bool {
-	return o.SortOrder[i].CreatedAt.Before(o.SortOrder[j].CreatedAt)
+func (o sortOrderByDate) Less(i, j int) bool {
+	return o.sortOrders[i].CreatedAt.Before(o.sortOrders[j].CreatedAt)
 }

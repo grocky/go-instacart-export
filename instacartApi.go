@@ -1,4 +1,4 @@
-package main
+package instacart
 
 import (
 	"encoding/json"
@@ -7,8 +7,9 @@ import (
 	"strconv"
 )
 
+// Client is the HTTP client for the Instacart orders API
 type Client struct {
-	sessionToken string
+	SessionToken string
 }
 
 func (c *Client) getPage(page int) OrdersResponse {
@@ -26,7 +27,7 @@ func (c *Client) getPage(page int) OrdersResponse {
 	req.Header.Set("Referer", "https://www.instacart.com/store/account/orders")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 
-	cookie := "_instacart_session=" + c.sessionToken + ";"
+	cookie := "_instacart_session=" + c.SessionToken + ";"
 	req.Header.Set("Cookie", cookie)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -44,6 +45,7 @@ func (c *Client) getPage(page int) OrdersResponse {
 	return ordersResp
 }
 
+// OrdersResponse is the response from the orders API
 // auto-generated from: https://mholt.github.io/json-to-go/
 //  - Updated Actions to be map[string]struct
 //  - Updated .orders.order_deliveries.order_items.qty to be float
