@@ -28,6 +28,12 @@ You'll need to log into the Instacart web app and get your session token. The to
 
 ![dev tools screenshot](./docs/devtools-token.png)
 
+Install the binary with the following
+
+```shell
+go get -u github.com/grocky/go-instacart-export/...
+```
+
 ## Usage
 
 Now you can invoke this binary and it will fetch all of your orders and place them into a CSV.
@@ -35,3 +41,7 @@ Now you can invoke this binary and it will fetch all of your orders and place th
 ```shell
 INSTACART_SESSION_TOKEN=<your token> instacart-export
 ```
+
+## License
+
+[MIT © Rocky Gray](LICENSE)
