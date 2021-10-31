@@ -69,7 +69,7 @@ func writeToCSV(data [][]string) {
 	log.Print("Writing orders to a CSV")
 
 	now := time.Now()
-	p = filepath.Join("data", "instacart_orders_" + now.Format("01-02-2006_03-04-05") + ".csv")
+	p := filepath.Join("data", "instacart_orders_" + now.Format("01-02-2006_03-04-05") + ".csv")
 	file, err := os.Create(p)
 	if err != nil {
 		log.Fatal("Unable to create file", err)
