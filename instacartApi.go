@@ -4,36 +4,86 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/http/cookiejar"
+	"sort"
 	"strconv"
+	"time"
 )
 
-// Client is the HTTP client for the Instacart orders API
+// Client is the HTTP client for the Instacart orders API.
 type Client struct {
 	SessionToken string
+	httpClient   *http.Client
+}
+
+// NewClient constructs a Client.
+func NewClient(sessionToken string) *Client {
+	jar, _ := cookiejar.New(nil)
+	httpClient := &http.Client{
+		Jar: jar,
+	}
+	return &Client{
+		SessionToken: sessionToken,
+		httpClient:   httpClient,
+	}
+}
+
+const timeFormat = "Jan 2, 2006,  3:04 PM"
+
+// FetchOrders retrieves all orders sorted by date created, descending.
+func (c *Client) FetchOrders() []*Order {
+	var orders []*Order
+	var resp OrdersResponse
+	var nextPage *int
+	nextPage = new(int)
+
+	*nextPage = 1
+
+	for nextPage != nil {
+		log.Printf("Fetching page: %d", *nextPage)
+		resp = c.getPage(*nextPage)
+		orders = append(orders, extractOrders(resp)...)
+		nextPage = resp.Meta.Pagination.NextPage
+	}
+
+	sort.Sort(sortOrderByDate{orders})
+	return orders
 }
 
 func (c *Client) getPage(page int) OrdersResponse {
 
-	req, err := http.NewRequest("GET", "https://www.instacart.com/v3/orders?page="+strconv.Itoa(page), nil)
+	url := "https://www.instacart.com/v3/orders?page=" + strconv.Itoa(page)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	req.Header.Set("Authority", "www.instacart.com")
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("X-Client-Identifier", "web")
+
+	req.Header.Set("Host", "www.instacart.com")
 	req.Header.Set("User-Agent", "Instacart Orders To CSV Client")
-	req.Header.Set("Dnt", "1")
+	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Referer", "https://www.instacart.com/store/account/orders")
-	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+	req.Header.Set("X-Client-Identifier", "web")
 
-	cookie := "_instacart_session_id=" + c.SessionToken + ";"
-	req.Header.Set("Cookie", cookie)
+	sessionCookie := &http.Cookie{
+		Name:  "_instacart_session_id",
+		Value: c.SessionToken,
+	}
+	req.AddCookie(sessionCookie)
 
-	resp, err := http.DefaultClient.Do(req)
+	// sets the ":authority" pseudo-header field for HTTP/2
+	//req.Host = "www.instacart.com"
+
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Println("There was a problem with the request to instacart...")
+		log.Println(resp.Status)
+		log.Fatalf("%+v\n", resp)
+	}
+
 	defer resp.Body.Close()
 
 	var ordersResp OrdersResponse
@@ -43,6 +93,55 @@ func (c *Client) getPage(page int) OrdersResponse {
 	}
 
 	return ordersResp
+}
+
+func extractOrders(orderResp OrdersResponse) []*Order {
+	var orders []*Order
+	for _, o := range orderResp.Orders {
+		order := &Order{}
+		order.ID = o.ID
+		order.Status = o.Status
+		order.Total = o.Total
+
+		createdAt, err := time.Parse(timeFormat, o.CreatedAt)
+		if err != nil {
+			log.Fatalf("Unable to parse order time: %s | %v", o.CreatedAt, err)
+		}
+		order.CreatedAt = createdAt
+
+		var deliveries []*Delivery
+		for _, d := range o.OrderDeliveries {
+			delivery := &Delivery{}
+			delivery.Retailer = d.Retailer.Name
+
+			if d.DeliveredAt != "" {
+				deliveredAt, err := time.Parse(timeFormat, d.DeliveredAt)
+				if err != nil {
+					log.Fatalf("Unable to parse delivery time: %s | %v", d.DeliveredAt, err)
+				}
+				delivery.DeliveredAt = deliveredAt
+			}
+
+			var items []*Item
+			for _, i := range d.OrderItems {
+				item := &Item{}
+				item.ID = i.Item.ID
+				item.ProductID = i.Item.ProductID
+				item.Quantity = int(i.Qty)
+				item.Name = i.Item.Name
+
+				items = append(items, item)
+			}
+
+			delivery.Items = items
+			deliveries = append(deliveries, delivery)
+		}
+
+		order.Deliveries = deliveries
+		orders = append(orders, order)
+	}
+
+	return orders
 }
 
 // OrdersResponse is the response from the orders API

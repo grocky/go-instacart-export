@@ -18,12 +18,10 @@ func main() {
 		log.Fatal("Session token missing. Please provide the INSTACART_SESSION_TOKEN environment variable")
 	}
 
-	client := instacart.Client{
-		SessionToken: sessionToken,
-	}
+	client := instacart.NewClient(sessionToken)
 
 	log.Print("Fetching orders...")
-	orders := instacart.FetchOrders(client)
+	orders := client.FetchOrders()
 	data := extractOrdersData(orders)
 	writeToCSV(data)
 
