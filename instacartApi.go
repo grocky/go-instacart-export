@@ -27,7 +27,7 @@ func (c *Client) getPage(page int) OrdersResponse {
 	req.Header.Set("Referer", "https://www.instacart.com/store/account/orders")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 
-	cookie := "_instacart_session=" + c.SessionToken + ";"
+	cookie := "_instacart_session_id=" + c.SessionToken + ";"
 	req.Header.Set("Cookie", cookie)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -47,13 +47,13 @@ func (c *Client) getPage(page int) OrdersResponse {
 
 // OrdersResponse is the response from the orders API
 // auto-generated from: https://mholt.github.io/json-to-go/
-//  - Updated Actions to be map[string]struct
-//  - Updated .orders.order_deliveries.order_items.qty to be float
-//  - Updated .orders.order_deliveries.order_items.item.qty_attributes.increment  to be float
-//  - Updated .orders.order_deliveries.order_items.item.qty_attributes.min  to be float
-//  - Updated .orders.order_deliveries.order_items.item.qty_attributes.max  to be float
-//  - Updated .orders.order_deliveries.order_items.item.qty_attributes.select.options to be float
-//  - Updated .orders.rating to be float
+//   - Updated Actions to be map[string]struct
+//   - Updated .orders.order_deliveries.order_items.qty to be float
+//   - Updated .orders.order_deliveries.order_items.item.qty_attributes.increment  to be float
+//   - Updated .orders.order_deliveries.order_items.item.qty_attributes.min  to be float
+//   - Updated .orders.order_deliveries.order_items.item.qty_attributes.max  to be float
+//   - Updated .orders.order_deliveries.order_items.item.qty_attributes.select.options to be float
+//   - Updated .orders.rating to be float
 type OrdersResponse struct {
 	Orders []struct {
 		ID        string  `json:"id"`

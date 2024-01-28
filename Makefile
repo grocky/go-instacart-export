@@ -11,10 +11,7 @@ $(BIN):
 fmt: phony ## format the codes
 	@go fmt ./...
 
-lint: phony fmt ## lint the codes
-	@golint ./...
-
-vet: phony lint ## vet the codes
+vet: phony ## vet the codes
 	@go vet ./...
 
 build: phony vet | $(BIN) ## build the binary
