@@ -55,7 +55,7 @@ func extractOrdersData(orders []*instacart.Order) [][]string {
 	log.Print("Processing orders")
 	data := [][]string{{
 		"id",
-		"satus",
+		"status",
 		"total",
 		"createdAt",
 		"retailers",
