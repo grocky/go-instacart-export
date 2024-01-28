@@ -31,15 +31,13 @@ func NewClient(sessionToken string) *Client {
 const timeFormat = "Jan 2, 2006,  3:04 PM"
 
 // FetchOrders retrieves all orders sorted by date created, descending.
-func (c *Client) FetchOrders() []*Order {
+func (c *Client) FetchOrders(start, end int) []*Order {
 	var orders []*Order
 	var resp OrdersResponse
-	var nextPage *int
-	nextPage = new(int)
+	var nextPage = new(int)
+	*nextPage = start
 
-	*nextPage = 1
-
-	for nextPage != nil {
+	for nextPage != nil && *nextPage <= end {
 		log.Printf("Fetching page: %d", *nextPage)
 		resp = c.getPage(*nextPage)
 		orders = append(orders, extractOrders(resp)...)

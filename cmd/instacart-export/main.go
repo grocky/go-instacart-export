@@ -7,21 +7,44 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pborman/getopt/v2"
+
+	instacart "github.com/grocky/go-instacart-export"
 )
 
-import instacart "github.com/grocky/go-instacart-export"
+var (
+	help         = false
+	startPage    = 1
+	endPage      = 10
+	sessionToken = ""
+)
+
+func init() {
+	getopt.FlagLong(&startPage, "start", 0, "The first page of order results to request")
+	getopt.FlagLong(&endPage, "end", 0, "The last page of order results to request")
+	getopt.FlagLong(&help, "help", 'h', "Help!")
+}
 
 func main() {
-	sessionToken := os.Getenv("INSTACART_SESSION_TOKEN")
 
+	getopt.Parse()
+	if help {
+		getopt.Usage()
+		return
+	}
+
+	sessionToken = os.Getenv("INSTACART_SESSION_TOKEN")
 	if sessionToken == "" {
-		log.Fatal("Session token missing. Please provide the INSTACART_SESSION_TOKEN environment variable")
+		log.Println("Session token missing. Please provide the INSTACART_SESSION_TOKEN environment variable")
+		getopt.Usage()
+		return
 	}
 
 	client := instacart.NewClient(sessionToken)
 
 	log.Print("Fetching orders...")
-	orders := client.FetchOrders()
+	orders := client.FetchOrders(startPage, endPage)
 	data := extractOrdersData(orders)
 	writeToCSV(data)
 
