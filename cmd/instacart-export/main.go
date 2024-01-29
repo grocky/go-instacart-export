@@ -51,7 +51,7 @@ func main() {
 	log.Print("Done!")
 }
 
-func extractOrdersData(orders []*instacart.Order) [][]string {
+func extractOrdersData(orders []instacart.Order) [][]string {
 	log.Print("Processing orders")
 	data := [][]string{{
 		"id",

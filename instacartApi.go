@@ -30,9 +30,9 @@ func NewClient(sessionToken string) *Client {
 
 const timeFormat = "Jan 2, 2006,  3:04 PM"
 
-// FetchOrders retrieves all orders sorted by date created, descending.
-func (c *Client) FetchOrders(start, end int) []*Order {
-	var orders []*Order
+// FetchOrders retrieves all orders between page start and page end, inclusive, sorted by date created, descending.
+func (c *Client) FetchOrders(start, end int) []Order {
+	var orders []Order
 	var resp OrdersResponse
 	var nextPage = new(int)
 	*nextPage = start
@@ -44,7 +44,7 @@ func (c *Client) FetchOrders(start, end int) []*Order {
 		nextPage = resp.Meta.Pagination.NextPage
 	}
 
-	sort.Sort(sortOrderByDate{orders})
+	sort.Sort(byDate(orders))
 	return orders
 }
 
@@ -93,10 +93,10 @@ func (c *Client) getPage(page int) OrdersResponse {
 	return ordersResp
 }
 
-func extractOrders(orderResp OrdersResponse) []*Order {
-	var orders []*Order
+func extractOrders(orderResp OrdersResponse) []Order {
+	var orders []Order
 	for _, o := range orderResp.Orders {
-		order := &Order{}
+		order := Order{}
 		order.ID = o.ID
 		order.Status = o.Status
 		order.Total = o.Total
@@ -107,9 +107,9 @@ func extractOrders(orderResp OrdersResponse) []*Order {
 		}
 		order.CreatedAt = createdAt
 
-		var deliveries []*Delivery
+		var deliveries []Delivery
 		for _, d := range o.OrderDeliveries {
-			delivery := &Delivery{}
+			delivery := Delivery{}
 			delivery.Retailer = d.Retailer.Name
 
 			if d.DeliveredAt != "" {
@@ -120,9 +120,9 @@ func extractOrders(orderResp OrdersResponse) []*Order {
 				delivery.DeliveredAt = deliveredAt
 			}
 
-			var items []*Item
+			var items []Item
 			for _, i := range d.OrderItems {
-				item := &Item{}
+				item := Item{}
 				item.ID = i.Item.ID
 				item.ProductID = i.Item.ProductID
 				item.Quantity = int(i.Qty)

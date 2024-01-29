@@ -9,19 +9,19 @@ $(BIN):
 .PHONY:phony
 
 fmt: phony ## format the codes
-	@go fmt ./...
+	go fmt ./...
 
 vet: phony ## vet the codes
-	@go vet ./...
+	go vet ./...
 
 build: phony vet | $(BIN) ## build the binary
-	@go build \
+	go build \
 		-tags release \
 		-ldflags '-X main.Version=$(VERSION)' \
 		-o $(BIN)/ ./...
 
 run: phony vet ## run the binary
-	@go run main.go
+	go run main.go
 
 clean: phony
 	rm -rf $(BIN)

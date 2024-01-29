@@ -2,7 +2,7 @@ package instacart
 
 import "time"
 
-// Item represents a purchased item in teh delivery.
+// Item represents a purchased item in the delivery.
 type Item struct {
 	ID        string
 	ProductID string
@@ -10,11 +10,11 @@ type Item struct {
 	Name      string
 }
 
-// Delivery is a purhcase at a particular retailer.
+// Delivery is a purchase at a particular retailer.
 type Delivery struct {
 	Retailer    string
 	DeliveredAt time.Time
-	Items       []*Item
+	Items       []Item
 }
 
 // Order is the complete transaction.
@@ -23,16 +23,12 @@ type Order struct {
 	Status     string
 	Total      string
 	CreatedAt  time.Time
-	Deliveries []*Delivery
+	Deliveries []Delivery
 }
 
-type sortOrders []*Order
+// byDate implements sort.Interface for []Order based on the CreatedAt field.
+type byDate []Order
 
-func (o sortOrders) Len() int      { return len(o) }
-func (o sortOrders) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
-
-type sortOrderByDate struct{ sortOrders }
-
-func (o sortOrderByDate) Less(i, j int) bool {
-	return o.sortOrders[i].CreatedAt.Before(o.sortOrders[j].CreatedAt)
-}
+func (o byDate) Len() int           { return len(o) }
+func (o byDate) Swap(i, j int)      { o[i], o[j] = o[j], o[i] }
+func (o byDate) Less(i, j int) bool { return o[i].CreatedAt.Before(o[j].CreatedAt) }
