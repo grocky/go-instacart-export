@@ -31,4 +31,4 @@ type byDate []Order
 
 func (o byDate) Len() int           { return len(o) }
 func (o byDate) Swap(i, j int)      { o[i], o[j] = o[j], o[i] }
-func (o byDate) Less(i, j int) bool { return o[i].CreatedAt.Before(o[j].CreatedAt) }
+func (o byDate) Less(i, j int) bool { return o[i].CreatedAt.After(o[j].CreatedAt) }
