@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 
 BIN = $(CURDIR)/bin
-VERSION ?= $(shell git describe --tags --always --dirty --match=v* 2> /dev/null || echo v0)
+VERSION ?= $(shell git describe --tags --always --dirty --match='v*' 2> /dev/null || echo v0)
 SOURCES = $(shell find . -type f -name *.go)
 TARGET = $(BIN)/instacart-export
 

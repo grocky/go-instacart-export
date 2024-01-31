@@ -29,6 +29,8 @@ func init() {
 
 func main() {
 
+	var err error
+
 	getopt.Parse()
 	if help {
 		getopt.Usage()
@@ -46,10 +48,10 @@ func main() {
 	order := exporter.NewOrderService(client)
 
 	log.Print("Fetching orders...")
-	orders, err := order.GetOrderPages(startPage, endPage)
+	var orders []*exporter.Order
+	orders, err = order.GetOrderPages(startPage, endPage)
 	if err != nil {
-		log.Printf("some page requests failed...: %s", err)
-		log.Print(err)
+		log.Printf("Error: %s", err)
 	}
 
 	if len(orders) == 0 {
@@ -67,6 +69,10 @@ func main() {
 	}
 
 	log.Print("Done!")
+
+	if err != nil {
+		os.Exit(1)
+	}
 }
 
 func convertOrderToCSV(orders []*exporter.Order) [][]string {

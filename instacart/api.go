@@ -52,6 +52,10 @@ func (c *Client) FetchPage(page int) (*OrdersResponse, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusTooManyRequests {
+			retry, _ := strconv.Atoi(resp.Header.Get("Retry-After"))
+			return nil, RateLimitError{retryAfter: retry}
+		}
 		return nil, fmt.Errorf("api request status not OK, statusCode: %d, response: %+v", resp.StatusCode, resp)
 	}
 
@@ -64,4 +68,12 @@ func (c *Client) FetchPage(page int) (*OrdersResponse, error) {
 	}
 
 	return ordersResp, nil
+}
+
+type RateLimitError struct {
+	retryAfter int
+}
+
+func (e RateLimitError) Error() string {
+	return fmt.Sprintf("rate limit exceeded. Retry after %d seconds", e.retryAfter)
 }
