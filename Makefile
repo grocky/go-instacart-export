@@ -2,32 +2,45 @@
 
 BIN = $(CURDIR)/bin
 VERSION ?= $(shell git describe --tags --always --dirty --match=v* 2> /dev/null || echo v0)
+SOURCES = $(shell find . -type f -name *.go)
+TARGET = $(BIN)/instacart-export
 
 $(BIN):
 	@mkdir -p $@
 
 .PHONY:phony
 
-fmt: phony ## format the codes
-	go fmt ./...
+push: tidy no-dirty ## push changes to github with checks
+	git push
 
-vet: phony ## vet the codes
+no-dirty:
+	git diff --exit-code
+
+tidy: phony ## verify sources
+	go fmt ./...
+	go mod tidy -v
+	go mod verify
 	go vet ./...
 
-build: phony vet | $(BIN) ## build the binary
+$(TARGET): $(SOURCES) | $(BIN)
 	go build \
 		-tags release \
 		-ldflags '-X main.Version=$(VERSION)' \
-		-o $(BIN)/ ./...
+		-o $(BIN) ./...
 
-run: phony vet ## run the binary
-	go run main.go
+build: $(TARGET) ## build the binary
+
+run: $(TARGET) ## run the binary
+	./$(TARGET)
 
 clean: phony
-	rm -rf $(BIN)
+	rm -rf $(BIN) data/*
 
 GREEN  := $(shell tput -Txterm setaf 2)
 RESET  := $(shell tput -Txterm sgr0)
+
+version: phony ## print the version
+	@echo $(VERSION)
 
 help: phony ## print this help message
 	@awk -F ':|##' '/^[^\t].+?:.*?##/ { printf "${GREEN}%-20s${RESET}%s\n", $$1, $$NF }' $(MAKEFILE_LIST)

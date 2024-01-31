@@ -1,4 +1,4 @@
-package instacart
+package exporter
 
 import "time"
 
@@ -26,9 +26,9 @@ type Order struct {
 	Deliveries []Delivery
 }
 
-// byDate implements sort.Interface for []Order based on the CreatedAt field.
-type byDate []Order
+// ByDate implements sort.Interface for []Order based on the CreatedAt field.
+type ByDate []*Order
 
-func (o byDate) Len() int           { return len(o) }
-func (o byDate) Swap(i, j int)      { o[i], o[j] = o[j], o[i] }
-func (o byDate) Less(i, j int) bool { return o[i].CreatedAt.After(o[j].CreatedAt) }
+func (o ByDate) Len() int           { return len(o) }
+func (o ByDate) Swap(i, j int)      { o[i], o[j] = o[j], o[i] }
+func (o ByDate) Less(i, j int) bool { return o[i].CreatedAt.After(o[j].CreatedAt) }

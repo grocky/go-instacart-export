@@ -2,6 +2,9 @@ package main
 
 import (
 	"encoding/csv"
+	"fmt"
+	"github.com/grocky/go-instacart-export/instacart"
+	"github.com/grocky/go-instacart-export/internal/exporter"
 	"log"
 	"os"
 	"strconv"
@@ -9,8 +12,6 @@ import (
 	"time"
 
 	"github.com/pborman/getopt/v2"
-
-	instacart "github.com/grocky/go-instacart-export"
 )
 
 var (
@@ -42,17 +43,33 @@ func main() {
 	}
 
 	client := instacart.NewClient(sessionToken)
+	order := exporter.NewOrderService(client)
 
 	log.Print("Fetching orders...")
-	orders := client.FetchOrders(startPage, endPage)
-	data := extractOrdersData(orders)
-	writeToCSV(data)
+	orders, err := order.GetOrderPages(startPage, endPage)
+	if err != nil {
+		log.Printf("some page requests failed...: %s", err)
+		log.Print(err)
+	}
+
+	if len(orders) == 0 {
+		log.Print("nothing to write to the file...exiting")
+		os.Exit(3)
+	}
+
+	log.Print("Processing orders")
+	data := convertOrderToCSV(orders)
+
+	log.Print("Writing orders to a CSV")
+	err = writeToCSV(data)
+	if err != nil {
+		fmt.Print(err)
+	}
 
 	log.Print("Done!")
 }
 
-func extractOrdersData(orders []instacart.Order) [][]string {
-	log.Print("Processing orders")
+func convertOrderToCSV(orders []*exporter.Order) [][]string {
 	data := [][]string{{
 		"id",
 		"status",
@@ -85,13 +102,11 @@ func extractOrdersData(orders []instacart.Order) [][]string {
 	return data
 }
 
-func writeToCSV(data [][]string) {
-	log.Print("Writing orders to a CSV")
-
+func writeToCSV(data [][]string) error {
 	now := time.Now()
 	file, err := os.Create("data/instacart_orders_" + now.Format("01-02-2006_03-04-05") + ".csv")
 	if err != nil {
-		log.Fatal("Unable to create file", err)
+		return fmt.Errorf("unable to create file: %w", err)
 	}
 	defer file.Close()
 
@@ -100,7 +115,9 @@ func writeToCSV(data [][]string) {
 
 	for _, row := range data {
 		if err := writer.Write(row); err != nil {
-			log.Fatal("Error writing data", err)
+			return fmt.Errorf("failure writing data: %w", err)
 		}
 	}
+
+	return nil
 }
