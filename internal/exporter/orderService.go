@@ -1,12 +1,15 @@
 package exporter
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"github.com/grocky/go-instacart-export/instacart"
 	"log"
 	"sort"
+	"sync"
 	"time"
+
+	"github.com/grocky/go-instacart-export/instacart"
 )
 
 const timeFormat = "Jan 2, 2006,  3:04 PM"
@@ -14,40 +17,111 @@ const timeFormat = "Jan 2, 2006,  3:04 PM"
 // OrderService implements business logic for exporting orders from Instacart.
 type OrderService struct {
 	instacartClient *instacart.Client
+	numWorkers      int
 }
 
 // NewOrderService creates a new OrderService.
 func NewOrderService(client *instacart.Client) *OrderService {
-	return &OrderService{instacartClient: client}
+	return &OrderService{
+		instacartClient: client,
+		numWorkers:      5,
+	}
 }
 
 // GetOrderPages retrieves pages of orders starting with start and ending with end, inclusive.
 // Results are returned in reverse chronological order.
 func (o *OrderService) GetOrderPages(start, end int) ([]*Order, error) {
-	var orders []*Order
-	var nextPage = new(int)
-	*nextPage = start
 
 	if start > end {
 		return nil, errors.New("start must be less than or equal to end")
 	}
 
-	for nextPage != nil && *nextPage <= end {
-		log.Printf("fetching page: %d", *nextPage)
-		resp, err := o.instacartClient.FetchPage(*nextPage)
-		if err != nil {
-			return orders, fmt.Errorf("failed to fetch page %d: %w", *nextPage, err)
-		}
-		o, err := extractOrdersFromResponse(resp)
-		if err != nil {
-			return orders, err
-		}
-		orders = append(orders, o...)
-		nextPage = resp.Meta.Pagination.NextPage
+	var wg sync.WaitGroup
+
+	numTasks := end - start + 1
+	tasks := make(chan task, numTasks)
+	results := make(chan task, numTasks)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// create the workers
+	for i := 0; i < o.numWorkers; i++ {
+		wg.Add(1)
+		go worker(workerContext{
+			ctx:     ctx,
+			client:  o.instacartClient,
+			tasks:   tasks,
+			results: results,
+			cancel:  cancel,
+			wg:      &wg,
+		})
+	}
+
+	// generate the tasks
+	for i := start; i <= end; i++ {
+		tasks <- task{page: i}
+	}
+
+	close(tasks)
+
+	wg.Wait()
+
+	close(results)
+
+	var orders []*Order
+	for r := range results {
+		orders = append(orders, r.orders...)
 	}
 
 	sort.Sort(ByDate(orders))
+
 	return orders, nil
+}
+
+type workerContext struct {
+	ctx     context.Context
+	client  *instacart.Client
+	cancel  context.CancelFunc
+	tasks   <-chan task
+	results chan<- task
+	wg      *sync.WaitGroup
+}
+
+func worker(wctx workerContext) {
+	defer wctx.wg.Done()
+
+	var err error
+	var resp *instacart.OrdersResponse
+	var orders []*Order
+
+	for t := range wctx.tasks {
+		// detect cancellation
+		select {
+		case <-wctx.ctx.Done():
+			return
+		default:
+		}
+
+		log.Printf("fetching page: %d", t.page)
+		resp, err = wctx.client.FetchPage(t.page)
+		if err != nil {
+			log.Printf("failed to fetch page %d: %s", t.page, err)
+			wctx.cancel()
+			return
+		}
+
+		orders, err = extractOrdersFromResponse(resp)
+		t.orders = orders
+
+		wctx.results <- t
+		log.Printf("completed processing page: %d\n", t.page)
+	}
+}
+
+type task struct {
+	page   int
+	orders []*Order
 }
 
 func extractOrdersFromResponse(orderResp *instacart.OrdersResponse) ([]*Order, error) {
