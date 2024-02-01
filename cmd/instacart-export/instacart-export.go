@@ -19,12 +19,15 @@ var (
 	startPage    = 1
 	endPage      = 10
 	sessionToken = ""
+	version      = false
+	Version      = ""
 )
 
 func init() {
 	getopt.FlagLong(&startPage, "start", 0, "The first page of order results to request")
 	getopt.FlagLong(&endPage, "end", 0, "The last page of order results to request")
 	getopt.FlagLong(&help, "help", 'h', "Help!")
+	getopt.FlagLong(&version, "version", 'v', "version")
 }
 
 func main() {
@@ -32,8 +35,14 @@ func main() {
 	var err error
 
 	getopt.Parse()
+
 	if help {
 		getopt.Usage()
+		return
+	}
+
+	if version {
+		fmt.Printf("%s version %s\n", getopt.CommandLine.Program(), Version)
 		return
 	}
 
