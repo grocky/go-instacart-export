@@ -8,7 +8,7 @@ type OrdersResponse struct {
 
 type Order struct {
 	ID              string            `json:"id"`
-	LegacyID        string            `json:"legacy_id"`
+	LegacyID        interface{}       `json:"legacy_id"` // this is usually an int, but sometimes it's a string
 	Status          string            `json:"status"`
 	Rating          float32           `json:"rating"`
 	Total           string            `json:"total"`
@@ -70,7 +70,7 @@ type OrderItem struct {
 
 type Item struct {
 	ID                          string            `json:"id"`
-	LegacyID                    int               `json:"legacy_id"`
+	LegacyID                    interface{}       `json:"legacy_id"` // this is usually an int, but sometimes it's a string
 	ProductID                   string            `json:"product_id"`
 	Name                        string            `json:"name"`
 	Attributes                  []string          `json:"attributes"`
