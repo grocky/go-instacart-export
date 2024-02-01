@@ -8,7 +8,7 @@ has been spent on various categories make it easy to import.
 ## CSV Fields
 
 | Field     | Description                             |
-| --------- | --------------------------------------- |
+|-----------|-----------------------------------------|
 | id        | The order ID                            |
 | status    | The order status                        |
 | total     | The order total                         |
@@ -38,7 +38,6 @@ go get -u github.com/grocky/go-instacart-export/...
 
 Now you can invoke this binary and it will fetch all of your orders and place them into a CSV.
 
-
 ```shell
 INSTACART_SESSION_TOKEN=<your token> instacart-export
 ```
@@ -47,7 +46,7 @@ By default, `instacart-export` will only export the first 10 pages of orders (In
 this endpoint). You can paginate through orders with the following flags.
 
 | Flag  | Description                                |
-| ----  | -----------                                |
+|-------|--------------------------------------------|
 | start | The first page of order results to request |
 | end   | The last page of order results to request  |
 
