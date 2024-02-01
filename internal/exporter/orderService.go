@@ -69,9 +69,12 @@ func (o *OrderService) GetOrderPages(start, end int) ([]*Order, error) {
 
 	close(results)
 
+	// collect the results
 	var orders []*Order
 	for r := range results {
-		orders = append(orders, r.orders...)
+		if r.orders != nil {
+			orders = append(orders, r.orders...)
+		}
 	}
 
 	sort.Sort(ByDate(orders))
@@ -80,8 +83,8 @@ func (o *OrderService) GetOrderPages(start, end int) ([]*Order, error) {
 }
 
 type workerContext struct {
-	ctx     context.Context
 	client  *instacart.Client
+	ctx     context.Context
 	cancel  context.CancelFunc
 	tasks   <-chan task
 	results chan<- task
@@ -111,11 +114,21 @@ func worker(wctx workerContext) {
 			return
 		}
 
+		if len(resp.Orders) == 0 {
+			log.Printf("no items to process on page: %d", t.page)
+			return
+		}
+
+		if resp.Meta.Pagination.NextPage == nil {
+			log.Printf("no more pages left to process: current page: %d", t.page)
+			wctx.cancel()
+		}
+
 		orders, err = extractOrdersFromResponse(resp)
 		t.orders = orders
 
 		wctx.results <- t
-		log.Printf("completed processing page: %d\n", t.page)
+		log.Printf("completed processing page: %d", t.page)
 	}
 }
 
