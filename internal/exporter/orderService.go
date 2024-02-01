@@ -24,7 +24,7 @@ type OrderService struct {
 func NewOrderService(client *instacart.Client) *OrderService {
 	return &OrderService{
 		instacartClient: client,
-		numWorkers:      5,
+		numWorkers:      10,
 	}
 }
 
