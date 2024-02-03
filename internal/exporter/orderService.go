@@ -125,6 +125,10 @@ func worker(wctx workerContext) {
 		}
 
 		orders, err = extractOrdersFromResponse(resp)
+		if err != nil {
+			log.Printf("unable to convert order: %s", err)
+		}
+
 		t.orders = orders
 
 		wctx.results <- t
